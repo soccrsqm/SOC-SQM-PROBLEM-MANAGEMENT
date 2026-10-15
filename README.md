@@ -17,4 +17,4 @@ Dashboard ini disesuaikan dengan kolom pada file `SQM Problem Management Dashboa
 - Tanggal trend diekstrak dari ID `SQDT-YYYYMMDD-...`; jika format ID berbeda, trend untuk baris tersebut tidak akan terplot.
 - MTTR diolah sebagai angka untuk menghitung rata-rata; jika format desimal data menggunakan koma, dashboard mencoba mengubahnya.
 - Open vs Closed menganggap status berisi CLOSED/CLOSE/RESOLVED/COMPLETE sebagai Closed; status lain dianggap Open.
-- Dashboard mengambil data dari Google Sheets saat dibuka atau tombol Refresh ditekan.
+- Dashboard mengambil data dari Google Sheets saat dibuka, tombol Refresh ditekan, dan otomatis setiap 15 menit.
