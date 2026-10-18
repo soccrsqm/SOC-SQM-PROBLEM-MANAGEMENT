@@ -1,31 +1,63 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbz34GvjpKG4PO78KsEvK8kcgZGADEBYJMSRcarKWSGpdik0rvjbfp5Yn1eTfKeMok0A/exec";
+const GOOGLE_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbz34GvjpKG4PO78KsEvK8kcgZGADEBYJMSRcarKWSGpdik0rvjbfp5Yn1eTfKeMok0A/exec";
 
-async function loadCsv() {
-  try {
-    const response = await fetch(API_URL);
+function loadGoogleSheetData() {
+  return new Promise((resolve, reject) => {
+    const callbackName =
+      "googleSheetCallback_" +
+      Date.now() +
+      "_" +
+      Math.floor(Math.random() * 10000);
 
-    if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status}`);
+    const script = document.createElement("script");
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error("Timeout saat membaca Google Sheets."));
+    }, 30000);
+
+    function cleanup() {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      script.remove();
     }
 
-    const result = await response.json();
+    window[callbackName] = function (result) {
+      cleanup();
 
-    if (!result.success || !Array.isArray(result.data)) {
-      throw new Error("Format data API tidak sesuai");
-    }
+      if (!result || result.success !== true) {
+        reject(
+          new Error(
+            result?.error || "Gagal membaca Google Sheets."
+          )
+        );
+        return;
+      }
 
-    const data = result.data;
+      if (!Array.isArray(result.data)) {
+        reject(new Error("Format data Google Sheets tidak valid."));
+        return;
+      }
 
-    console.log("Jumlah data:", data.length);
-    console.log("Headers:", result.headers);
-    console.log("Contoh data:", data[0]);
+      resolve(result);
+    };
 
-    // Gunakan data untuk memperbarui dashboard.
-    // Sesuaikan dengan fungsi render yang sudah ada.
-    return data;
+    script.onerror = function () {
+      cleanup();
+      reject(new Error("Gagal menghubungi Apps Script."));
+    };
 
-  } catch (error) {
-    console.error("Gagal membaca Google Sheets:", error);
-    throw error;
-  }
+    const separator = GOOGLE_SCRIPT_URL.includes("?")
+      ? "&"
+      : "?";
+
+    script.src =
+      GOOGLE_SCRIPT_URL +
+      separator +
+      "callback=" +
+      encodeURIComponent(callbackName) +
+      "&t=" +
+      Date.now();
+
+    document.head.appendChild(script);
+  });
 }
