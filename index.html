@@ -43,9 +43,21 @@ let tr={};rows.forEach(r=>tr[r.region]=(tr[r.region]||0)+r.traffic);makeChart("t
 $("i1").textContent=`${op.length} incident masih Open dari ${rows.length} incident terfilter.`;$("i2").textContent=mt.length?`Rata-rata MTTR ${ (mt.reduce((a,b)=>a+b,0)/mt.length).toFixed(2)} berdasarkan ${mt.length} nilai valid.`:"MTTR belum tersedia pada data terfilter.";let top=Object.entries(regc).sort((a,b)=>b[1]-a[1])[0];$("i3").textContent=top?`Region ${top[0]} memiliki incident terbanyak (${top[1]}).`:"Belum ada data region.";
 $("tbody").innerHTML=rows.slice(0,500).map(r=>`<tr><td>${esc(r.id)}</td><td><span class="pill sev">${esc(r.sev)}</span></td><td><span class="pill ${isClosed(r)?"closed":"open"}">${esc(r.status)}</span></td><td>${esc(r.branch)}</td><td>${esc(r.kab)}</td><td>${esc(r.region)}</td><td>${esc(r.circle)}</td><td>${esc(r.rca)}</td><td>${esc(r.mttr)}</td><td>${esc(r.mttd)}</td><td>${r.traffic}</td><td>${esc(r.ceso)}</td></tr>`).join("");$("rowCount").textContent=`Menampilkan ${Math.min(500,rows.length)} dari ${rows.length.toLocaleString("id-ID")} baris`}
 function load(){
-  if(!GOOGLE_SHEETS_API_URL.startsWith("https://script.google.com/macros/s/AKfycbz34GvjpKG4PO78KsEvK8kcgZGADEBYJMSRcarKWSGpdik0rvjbfp5Yn1eTfKeMok0A/exec")){
-    showError("URL Google Apps Script belum diatur."); return;
-  }
+  
+const apiUrl = String(GOOGLE_SHEETS_API_URL || "").trim();
+
+console.log("URL API yang digunakan dashboard:", apiUrl);
+
+if (
+  !/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(apiUrl)
+) {
+  showError(
+    "URL Google Apps Script belum diatur dengan benar. " +
+    "Periksa GOOGLE_SHEETS_API_URL di index.html."
+  );
+  return;
+}
+
   const callbackName="sqdtSheetCallback_"+Date.now()+"_"+Math.floor(Math.random()*100000);
   const script=document.createElement("script");
   let finished=false;
