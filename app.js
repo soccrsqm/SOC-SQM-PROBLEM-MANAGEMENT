@@ -9,7 +9,7 @@ const GOOGLE_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbz34GvjpKG4PO78KsEvK8kcgZGADEBYJMSRcarKWSGpdik0rvjbfp5Yn1eTfKeMok0A/exec";
 
 // Interval update otomatis: 5 menit.
-const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000;
+const AUTO_REFRESH_INTERVAL = 15 * 60 * 1000;
 
 let googleSheetData = [];
 let googleSheetLastUpdated = null;
@@ -23,10 +23,10 @@ let googleSheetLoading = false;
 
 function loadGoogleSheetData() {
   return new Promise((resolve, reject) => {
-    if (
-      !GOOGLE_SCRIPT_URL ||
-      GOOGLE_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbz34GvjpKG4PO78KsEvK8kcgZGADEBYJMSRcarKWSGpdik0rvjbfp5Yn1eTfKeMok0A/exec")
-    ) {
+if (
+  !GOOGLE_SCRIPT_URL ||
+  GOOGLE_SCRIPT_URL.includes("GANTI_URL_DI_SINI")
+) {
       reject(
         new Error("URL Google Apps Script belum diisi.")
       );
