@@ -42,44 +42,108 @@ let rc=count(rows,"rca");makeChart("rca","doughnut",Object.keys(rc).slice(0,10),
 let tr={};rows.forEach(r=>tr[r.region]=(tr[r.region]||0)+r.traffic);makeChart("traffic","bar",Object.keys(tr),[{label:"Traffic Loss (TB)",data:Object.values(tr),backgroundColor:"#21d4fd"}]);
 $("i1").textContent=`${op.length} incident masih Open dari ${rows.length} incident terfilter.`;$("i2").textContent=mt.length?`Rata-rata MTTR ${ (mt.reduce((a,b)=>a+b,0)/mt.length).toFixed(2)} berdasarkan ${mt.length} nilai valid.`:"MTTR belum tersedia pada data terfilter.";let top=Object.entries(regc).sort((a,b)=>b[1]-a[1])[0];$("i3").textContent=top?`Region ${top[0]} memiliki incident terbanyak (${top[1]}).`:"Belum ada data region.";
 $("tbody").innerHTML=rows.slice(0,500).map(r=>`<tr><td>${esc(r.id)}</td><td><span class="pill sev">${esc(r.sev)}</span></td><td><span class="pill ${isClosed(r)?"closed":"open"}">${esc(r.status)}</span></td><td>${esc(r.branch)}</td><td>${esc(r.kab)}</td><td>${esc(r.region)}</td><td>${esc(r.circle)}</td><td>${esc(r.rca)}</td><td>${esc(r.mttr)}</td><td>${esc(r.mttd)}</td><td>${r.traffic}</td><td>${esc(r.ceso)}</td></tr>`).join("");$("rowCount").textContent=`Menampilkan ${Math.min(500,rows.length)} dari ${rows.length.toLocaleString("id-ID")} baris`}
-function load(){
-  
-const apiUrl = String(GOOGLE_SHEETS_API_URL || "").trim();
 
-console.log("https://script.google.com/macros/s/AKfycbz34GvjpKG4PO78KsEvK8kcgZGADEBYJMSRcarKWSGpdik0rvjbfp5Yn1eTfKeMok0A/exec", apiUrl);
+ 
+function load() {
+  const apiUrl = String(GOOGLE_SHEETS_API_URL || "").trim();
 
-if (
-  !/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(apiUrl)
-) {
-  showError(
-    "URL Google Apps Script belum diatur dengan benar. " +
-    "Periksa GOOGLE_SHEETS_API_URL di index.html."
-  );
-  return;
-}
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(apiUrl)) {
+    showError("URL Google Apps Script tidak valid. Periksa GOOGLE_SHEETS_API_URL.");
+    return;
+  }
 
-  const callbackName="sqdtSheetCallback_"+Date.now()+"_"+Math.floor(Math.random()*100000);
-  const script=document.createElement("script");
-  let finished=false;
-  const cleanup=()=>{finished=true;clearTimeout(timer);script.remove();try{delete window[callbackName]}catch(_){window[callbackName]=undefined}};
-  const timer=setTimeout(()=>{if(finished)return;cleanup();showError("Waktu tunggu habis saat mengambil Google Sheets. Periksa deployment Apps Script dan akses Web app.")},20000);
-  window[callbackName]=(result)=>{
-    if(finished)return;
+  const callbackName =
+    "sqdtSheetCallback_" + Date.now() + "_" +
+    Math.floor(Math.random() * 100000);
+
+  const script = document.createElement("script");
+  const url = new URL(apiUrl);
+  url.searchParams.set("callback", callbackName);
+  url.searchParams.set("t", Date.now());
+
+  let finished = false;
+  let timer;
+
+  function cleanup() {
+    finished = true;
+    clearTimeout(timer);
+    script.remove();
+    delete window[callbackName];
+  }
+
+  window[callbackName] = function (result) {
+    if (finished) return;
     cleanup();
-    try{
-      if(!result||result.success!==true)throw Error(result&&result.error?result.error:"Respons API tidak valid.");
-      const records=Array.isArray(result.data)?result.data:[];
-      all=records.map(norm).filter(r=>r.id||r.sev||r.region);
-      if(!all.length)throw Error("API berhasil diakses, tetapi tidak ada baris data. Periksa nama tab dan header.");
-      fill("severityFilter",uniq(all.map(r=>r.sev)));fill("regionFilter",uniq(all.map(r=>r.region)));fill("statusFilter",uniq(all.map(r=>r.status)));fill("circleFilter",uniq(all.map(r=>r.circle)));fill("rcaFilter",uniq(all.map(r=>r.rca)));fill("branchFilter",uniq(all.map(r=>r.branch)));
-      $("error").style.display="none";render();
-      const stamp=result.updatedAt?new Date(result.updatedAt).toLocaleString("id-ID"):new Date().toLocaleString("id-ID");
-      $("rowCount").textContent=`Menampilkan ${Math.min(500,all.length)} dari ${all.length.toLocaleString("id-ID")} baris · diperbarui ${stamp}`;
-    }catch(e){showError("Gagal membaca data Google Sheets: "+e.message)}
+
+    try {
+      if (!result || result.success !== true) {
+        throw new Error(result?.error || "Respons API tidak valid.");
+      }
+
+      if (!Array.isArray(result.data)) {
+        throw new Error("Respons API tidak memiliki array data.");
+      }
+
+      const records = result.data;
+      all = records.map(norm).filter(r => r.id || r.sev || r.region);
+
+      if (!all.length) {
+        throw new Error(
+          "API terhubung, tetapi data insiden kosong atau kolom SQDT tidak cocok."
+        );
+      }
+
+      fill("severityFilter", uniq(all.map(r => r.sev)));
+      fill("regionFilter", uniq(all.map(r => r.region)));
+      fill("statusFilter", uniq(all.map(r => r.status)));
+      fill("circleFilter", uniq(all.map(r => r.circle)));
+      fill("rcaFilter", uniq(all.map(r => r.rca)));
+      fill("branchFilter", uniq(all.map(r => r.branch)));
+
+      $("error").style.display = "none";
+      render();
+
+      const stamp = result.updatedAt
+        ? new Date(result.updatedAt).toLocaleString("id-ID")
+        : new Date().toLocaleString("id-ID");
+
+      $("rowCount").textContent =
+        `Menampilkan ${Math.min(500, all.length)} dari ` +
+        `${all.length.toLocaleString("id-ID")} baris · diperbarui ${stamp}`;
+
+      console.log("SQDT API berhasil:", {
+        totalDariAPI: result.total,
+        dataDiterima: records.length,
+        dataDitampilkan: all.length
+      });
+
+    } catch (error) {
+      showError("Gagal membaca data Google Sheets: " + error.message);
+      console.error(error);
+    }
   };
-  script.onerror=()=>{if(finished)return;cleanup();showError("Gagal memuat API Google Apps Script. Pastikan deployment Web app aktif, URL /exec benar, dan aksesnya diizinkan.")};
-  script.src=GOOGLE_SHEETS_API_URL+"?callback="+encodeURIComponent(callbackName)+"&t="+Date.now();
+
+  script.onerror = function () {
+    if (finished) return;
+    cleanup();
+    showError(
+      "Gagal memuat Google Apps Script. Periksa URL deployment dan akses Web App."
+    );
+    console.error("Gagal memuat URL:", url.href);
+  };
+
+  timer = setTimeout(function () {
+    if (finished) return;
+    cleanup();
+    showError(
+      "Timeout membaca Google Sheets. Periksa apakah callback JSONP dipanggil dengan benar."
+    );
+    console.error("Timeout callback:", callbackName);
+  }, 30000);
+
+  script.src = url.href;
   document.head.appendChild(script);
 }
+
 ["sqdtSearch","search","severityFilter","regionFilter","statusFilter","circleFilter","rcaFilter","branchFilter"].forEach(id=>$(id).addEventListener("input",render));$("refresh").onclick=load;$("reset").onclick=()=>{["sqdtSearch","search","severityFilter","regionFilter","statusFilter","circleFilter","rcaFilter","branchFilter"].forEach(id=>$(id).value="");render()};$("export").onclick=()=>{let a=document.createElement("a"),csv=Papa.unparse(filtered().map(r=>({"SQDT":r.id,"SEVERITY":r.sev,"Status":r.status,"BRANCH / NODE":r.branch,"KABUPATEN":r.kab,"REGION":r.region,"CIRCLE":r.circle,"RCA":r.rca,"MTTR":r.mttr,"MTTD 1 (terhadap Initial Posting)":r.mttd,"TRAFFIC LOSS (TB) TOTAL":r.traffic,"Achievement CESO":r.ceso})));a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));a.download="sqdt-filtered.csv";a.click();URL.revokeObjectURL(a.href)};load();setInterval(load,15*60*1000);
 </script></body></html>
