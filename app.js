@@ -6,7 +6,7 @@
 
 // GANTI dengan URL Web App Apps Script Anda.
 const GOOGLE_SCRIPT_URL =
-  "PASTE_URL_WEB_APP_ANDA_DI_SINI";
+  "https://script.google.com/macros/s/AKfycbz34GvjpKG4PO78KsEvK8kcgZGADEBYJMSRcarKWSGpdik0rvjbfp5Yn1eTfKeMok0A/exec";
 
 // Interval update otomatis: 5 menit.
 const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000;
@@ -25,7 +25,7 @@ function loadGoogleSheetData() {
   return new Promise((resolve, reject) => {
     if (
       !GOOGLE_SCRIPT_URL ||
-      GOOGLE_SCRIPT_URL.includes("PASTE_URL")
+      GOOGLE_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbz34GvjpKG4PO78KsEvK8kcgZGADEBYJMSRcarKWSGpdik0rvjbfp5Yn1eTfKeMok0A/exec")
     ) {
       reject(
         new Error("URL Google Apps Script belum diisi.")
