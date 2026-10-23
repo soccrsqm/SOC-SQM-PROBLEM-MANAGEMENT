@@ -130,11 +130,10 @@ function filtered() {
   );
 }
 function render() {
-  const rows = filtered();
-  const op = rows.filter(r => !isClosed(r));
-  const cl = rows.filter(isClosed);
-  const mt = rows.map(r => num(r.mttr)).filter(v => v !== null);
-
+ const totalOpen = filteredData.filter(r =>
+  String(r.status || "").trim().toUpperCase() === "OPEN"
+).length;
+  
   $("total").textContent = rows.length.toLocaleString("id-ID");
   $("open").textContent = op.length.toLocaleString("id-ID");
   $("closed").textContent = cl.length.toLocaleString("id-ID");
