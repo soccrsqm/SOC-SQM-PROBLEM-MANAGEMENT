@@ -96,7 +96,10 @@ function dateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 function norm(r) {
-  const id = s(get(r, ["SQDT"]));
+const id = s(get(r, [
+  "Service Incident Case",
+  "SQDT"
+]));
   const d = parseIncidentDate(get(r, ["Incident Date", "INCIDENT DATE"]));
   return {
     id,
